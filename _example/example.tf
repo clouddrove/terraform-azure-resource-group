@@ -6,7 +6,7 @@ module "resource_group" {
   source = "../"
 
   environment = "test"
-  label_order = ["name","environment",]
+  label_order = ["name", "environment", ]
 
   name     = "example"
   location = "North Europe"
