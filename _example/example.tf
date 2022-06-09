@@ -3,12 +3,12 @@ provider "azurerm" {
 }
 
 module "resource_group" {
-  source = "../"
+  source      = "../"
   environment = "test"
   label_order = ["name", "environment", ]
-  name     = "example"
-  location = "North Europe"
-  lock_level = "CanNotDelete"
-  lock = true
+  name        = "example"
+  location    = "North Europe"
+  lock_level  = "CanNotDelete"
+  lock        = true
 }
 

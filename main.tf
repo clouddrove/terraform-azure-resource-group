@@ -3,8 +3,8 @@
 #Module      : labels
 #Description : Terraform module to create consistent naming for multiple names.
 module "labels" {
-  source  = "clouddrove/labels/azure"
-  version = "1.0.0"
+  source        = "clouddrove/labels/azure"
+  version       = "1.0.0"
   name          = var.name
   environment   = var.environment
   managedby     = var.managedby
@@ -34,5 +34,5 @@ resource "azurerm_management_lock" "default" {
   scope      = join("", azurerm_resource_group.default.*.id)
   lock_level = var.lock_level
   notes      = var.lock_notes
-  
+
 }
