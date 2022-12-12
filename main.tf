@@ -19,7 +19,7 @@ module "labels" {
 #Description : Terraform resource for resource group.
 resource "azurerm_resource_group" "default" {
   count    = var.enabled ? 1 : 0
-  name     = format("%s-%s-resource-group", var.name, var.environment)
+  name     = format("%s-resource-group", module.labels.id)
   location = var.location
   tags     = module.labels.tags
 
