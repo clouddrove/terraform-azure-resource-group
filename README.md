@@ -111,9 +111,9 @@ Here is an example of how you can use this module in your inventory structure:
 | Name | Description |
 |------|-------------|
 | resource\_group\_id | The ID of the Resource Group. |
-| resource\_group\_location | The ID of the Resource Group. |
-| resource\_group\_name | The ID of the Resource Group. |
-| tags | The tags associated to resources. |
+| resource\_group\_location | The Azure Region where the Resource Group should exist. Changing this forces a new Resource Group to be created. |
+| resource\_group\_name | The Name which should be used for this Resource Group. Changing this forces a new Resource Group to be created. |
+| tags | A mapping of tags which should be assigned to the Resource Group. |
 
 
 

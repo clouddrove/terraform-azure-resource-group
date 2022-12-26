@@ -5,15 +5,15 @@ output "resource_group_id" {
 
 output "resource_group_name" {
   value       = join("", azurerm_resource_group.default.*.name)
-  description = "The name of the Resource Group."
+  description = "The Name which should be used for this Resource Group. Changing this forces a new Resource Group to be created."
 }
 
 output "resource_group_location" {
   value       = join("", azurerm_resource_group.default.*.location)
-  description = "The location of the Resource Group."
+  description = "The Azure Region where the Resource Group should exist. Changing this forces a new Resource Group to be created."
 }
 
 output "tags" {
   value       = module.labels.tags
-  description = "The tags associated to resources."
+  description = "A mapping of tags which should be assigned to the Resource Group."
 }
