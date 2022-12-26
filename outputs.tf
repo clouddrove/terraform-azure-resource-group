@@ -5,12 +5,12 @@ output "resource_group_id" {
 
 output "resource_group_name" {
   value       = join("", azurerm_resource_group.default.*.name)
-  description = "The ID of the Resource Group."
+  description = "The name of the Resource Group."
 }
 
 output "resource_group_location" {
   value       = join("", azurerm_resource_group.default.*.location)
-  description = "The ID of the Resource Group."
+  description = "The location of the Resource Group."
 }
 
 output "tags" {
