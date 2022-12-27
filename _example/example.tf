@@ -5,7 +5,7 @@ provider "azurerm" {
 module "resource_group" {
   source = "../"
 
-  environment = "test"
+  environment = "tested"
   label_order = ["name", "environment", ]
 
   name     = "example"
