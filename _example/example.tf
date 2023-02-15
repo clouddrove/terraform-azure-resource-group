@@ -13,5 +13,5 @@ module "resource_group" {
 
   #resource lock
   resource_lock_enabled = true
-  lock_level = "CanNotDelete"
+  lock_level            = "CanNotDelete"
 }

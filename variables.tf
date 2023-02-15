@@ -100,12 +100,12 @@ variable "delete" {
 }
 
 variable "resource_lock_enabled" {
-  type = bool
-  default = false 
+  type        = bool
+  default     = false
   description = "enable or disable lock resource"
 }
 
 variable "lock_level" {
-  type = string
+  type    = string
   default = "CanNotDelete"
 }
