@@ -98,3 +98,14 @@ variable "delete" {
   default     = "90m"
   description = "Used when deleting the Resource Group."
 }
+
+variable "resource_lock_enabled" {
+  type = bool
+  default = false 
+  description = "enable or disable lock resource"
+}
+
+variable "lock_level" {
+  type = string
+  default = "CanNotDelete"
+}

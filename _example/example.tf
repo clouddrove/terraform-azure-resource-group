@@ -10,4 +10,8 @@ module "resource_group" {
 
   name     = "example"
   location = "North Europe"
+
+  #resource lock
+  resource_lock_enabled = true
+  lock_level = "CanNotDelete"
 }
