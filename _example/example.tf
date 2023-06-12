@@ -6,11 +6,11 @@ provider "azurerm" {
 ## Resource group module call.  
 ##-----------------------------------------------------------------------------
 module "resource_group" {
-  source = "../"
+  source      = "../"
   environment = "test"
   label_order = ["name", "environment", ]
-  name     = "example"
-  location = "North Europe"
+  name        = "example"
+  location    = "North Europe"
   ##----------------------------------------------------------------------------- 
   ## Azure Management lock resource set to true to lock resource group. 
   ##-----------------------------------------------------------------------------
