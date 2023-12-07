@@ -36,5 +36,5 @@ resource "azurerm_management_lock" "resource-group-level" {
   name       = format("%s-rg-lock", var.lock_level)
   scope      = azurerm_resource_group.default.*.id[0]
   lock_level = var.lock_level
-  notes      = "This Resource Group is locked by terrafrom"
+  notes      = var.notes
 }

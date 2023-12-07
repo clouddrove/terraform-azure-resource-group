@@ -16,9 +16,12 @@ github_repo: clouddrove/terraform-azure-resource-group
 
 # Badges to display
 badges:
-  - name: "Terraform"
-    image: "https://img.shields.io/badge/Terraform-v1.0.0-green"
-    url: "https://www.terraform.io"
+  - name: "Latest Release"
+    image: "https://img.shields.io/github/release/clouddrove/terraform-azure-resource-group.svg"
+    url: "https://github.com/clouddrove/terraform-azure-resource-group/releases/latest"
+  - name: "tfsec"
+    image: "https://github.com/clouddrove/terraform-azure-resource-group/actions/workflows/tfsec.yml/badge.svg"
+    url: "https://github.com/clouddrove/terraform-azure-resource-group/actions/workflows/tfsec.yml"
   - name: "Licence"
     image: "https://img.shields.io/badge/License-APACHE-blue.svg"
     url: "LICENSE.md"
@@ -36,13 +39,16 @@ include:
 usage: |-
   ### Simple Example
   Here is an example of how you can use this module in your inventory structure:
-    ```hcl
-    module "resource_group" {
-     source      = "terraform/resource-group/azure"
-     version     = "1.0.0"
-     environment = "test"
-     label_order = ["name","environment"]
-     name        = "example"
-     location    = "North Europe"
-    }
-    ```
+   ```hcl
+      module "resource_group" {
+      source      = "terraform/resource-group/azure"
+      version     = "1.0.0"
+      name        = "example"
+      environment = "test"
+      location    = "North Europe"
+
+       #resource lock
+      resource_lock_enabled = true
+      lock_level            = "CanNotDelete"
+     }
+  ```

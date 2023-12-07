@@ -26,7 +26,7 @@ variable "environment" {
 
 variable "label_order" {
   type        = list(any)
-  default     = []
+  default     = ["name", "environment", ]
   description = "Label order, e.g. `name`,`application`."
 }
 
@@ -108,4 +108,10 @@ variable "resource_lock_enabled" {
 variable "lock_level" {
   type    = string
   default = "CanNotDelete"
+}
+
+variable "notes" {
+  type        = string
+  default     = "This Resource Group is locked by terrafrom"
+  description = "Specifies some notes about the lock. Maximum of 512 characters. Changing this forces a new resource to be created."
 }
