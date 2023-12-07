@@ -34,7 +34,7 @@ resource "azurerm_resource_group" "default" {
 resource "azurerm_management_lock" "resource-group-level" {
   count      = var.enabled && var.resource_lock_enabled ? 1 : 0
   name       = format("%s-rg-lock", var.lock_level)
-  scope      = azurerm_resource_group.default.*.id[0]
+  scope      = azurerm_resource_group.default[0].id
   lock_level = var.lock_level
   notes      = var.notes
 }
