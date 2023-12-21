@@ -2,7 +2,7 @@
 #Description : Terraform label module variables.
 variable "name" {
   type        = string
-  default     = ""
+  default     = null
   description = "Name  (e.g. `app` or `cluster`)."
 }
 
@@ -20,7 +20,7 @@ variable "repository" {
 
 variable "environment" {
   type        = string
-  default     = ""
+  default     = null
   description = "Environment (e.g. `prod`, `dev`, `staging`)."
 }
 
@@ -53,7 +53,7 @@ variable "enabled" {
 
 variable "location" {
   type        = string
-  default     = ""
+  default     = null
   description = "Location where resource should be created."
 }
 
