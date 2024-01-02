@@ -13,8 +13,11 @@
 
 <p align="center">
 
-<a href="https://www.terraform.io">
-  <img src="https://img.shields.io/badge/Terraform-v1.0.0-green" alt="Terraform">
+<a href="https://github.com/clouddrove/terraform-azure-resource-group/releases/latest">
+  <img src="https://img.shields.io/github/release/clouddrove/terraform-azure-resource-group.svg" alt="Latest Release">
+</a>
+<a href="https://github.com/clouddrove/terraform-azure-resource-group/actions/workflows/tfsec.yml">
+  <img src="https://github.com/clouddrove/terraform-azure-resource-group/actions/workflows/tfsec.yml/badge.svg" alt="tfsec">
 </a>
 <a href="LICENSE.md">
   <img src="https://img.shields.io/badge/License-APACHE-blue.svg" alt="Licence">
@@ -51,12 +54,6 @@ We have [*fifty plus terraform modules*][terraform_modules]. A few of them are c
 
 This module has a few dependencies: 
 
-- [Terraform 1.x.x](https://learn.hashicorp.com/terraform/getting-started/install.html)
-- [Go](https://golang.org/doc/install)
-- [github.com/stretchr/testify/assert](https://github.com/stretchr/testify)
-- [github.com/gruntwork-io/terratest/modules/terraform](https://github.com/gruntwork-io/terratest)
-
-
 
 
 
@@ -70,16 +67,19 @@ This module has a few dependencies:
 
 ### Simple Example
 Here is an example of how you can use this module in your inventory structure:
-  ```hcl
-  module "resource_group" {
-   source      = "terraform/resource-group/azure"
-   version     = "1.0.0"
-   environment = "test"
-   label_order = ["name","environment"]
-   name        = "example"
-   location    = "North Europe"
-  }
-  ```
+ ```hcl
+    module "resource_group" {
+    source      = "terraform/resource-group/azure"
+    version     = "1.0.0"
+    name        = "example"
+    environment = "test"
+    location    = "North Europe"
+
+     #resource lock
+    resource_lock_enabled = true
+    lock_level            = "CanNotDelete"
+   }
+```
 
 
 
@@ -90,20 +90,20 @@ Here is an example of how you can use this module in your inventory structure:
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| attributes | Additional attributes (e.g. `1`). | `list(any)` | `[]` | no |
 | business\_unit | Top-level division of your company that owns the subscription or workload that the resource belongs to. In smaller organizations, this tag might represent a single corporate or shared top-level organizational element. | `string` | `"Corp"` | no |
 | create | Used when creating the Resource Group. | `string` | `"90m"` | no |
 | delete | Used when deleting the Resource Group. | `string` | `"90m"` | no |
-| delimiter | Delimiter to be used between `organization`, `environment`, `name` and `attributes`. | `string` | `"-"` | no |
 | enabled | Flag to control the module creation. | `bool` | `true` | no |
-| environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `""` | no |
-| label\_order | Label order, e.g. `name`,`application`. | `list(any)` | `[]` | no |
-| location | Location where resource should be created. | `string` | `""` | no |
+| environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `null` | no |
+| label\_order | Label order, e.g. `name`,`application`. | `list(string)` | <pre>[<br>  "name",<br>  "environment"<br>]</pre> | no |
+| location | Location where resource should be created. | `string` | `null` | no |
+| lock\_level | n/a | `string` | `"CanNotDelete"` | no |
 | managedby | ManagedBy, eg 'CloudDrove'. | `string` | `"hello@clouddrove.com"` | no |
-| name | Name  (e.g. `app` or `cluster`). | `string` | `""` | no |
+| name | Name  (e.g. `app` or `cluster`). | `string` | `null` | no |
+| notes | Specifies some notes about the lock. Maximum of 512 characters. Changing this forces a new resource to be created. | `string` | `"This Resource Group is locked by terrafrom"` | no |
 | read | Used when retrieving the Resource Group. | `string` | `"5m"` | no |
 | repository | Terraform current module repo | `string` | `"https://github.com/clouddrove/terraform-azure-resource-group"` | no |
-| tags | Additional tags (e.g. map(`BusinessUnit`,`XYZ`). | `map(any)` | `{}` | no |
+| resource\_lock\_enabled | enable or disable lock resource | `bool` | `false` | no |
 | update | Used when updating the Resource Group. | `string` | `"90m"` | no |
 
 ## Outputs
