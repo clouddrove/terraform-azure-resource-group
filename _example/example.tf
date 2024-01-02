@@ -3,13 +3,10 @@ provider "azurerm" {
 }
 
 module "resource_group" {
-  source = "../"
-
-  environment = "tested"
-  label_order = ["name", "environment", ]
-
-  name     = "example"
-  location = "North Europe"
+  source      = "../"
+  name        = "example"
+  environment = "test"
+  location    = "North Europe"
 
   #resource lock
   resource_lock_enabled = true

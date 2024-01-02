@@ -2,7 +2,7 @@
 #Description : Terraform label module variables.
 variable "name" {
   type        = string
-  default     = ""
+  default     = null
   description = "Name  (e.g. `app` or `cluster`)."
 }
 
@@ -20,13 +20,13 @@ variable "repository" {
 
 variable "environment" {
   type        = string
-  default     = ""
+  default     = null
   description = "Environment (e.g. `prod`, `dev`, `staging`)."
 }
 
 variable "label_order" {
-  type        = list(any)
-  default     = []
+  type        = list(string)
+  default     = ["name", "environment", ]
   description = "Label order, e.g. `name`,`application`."
 }
 
@@ -34,24 +34,6 @@ variable "business_unit" {
   type        = string
   default     = "Corp"
   description = "Top-level division of your company that owns the subscription or workload that the resource belongs to. In smaller organizations, this tag might represent a single corporate or shared top-level organizational element."
-}
-
-variable "attributes" {
-  type        = list(any)
-  default     = []
-  description = "Additional attributes (e.g. `1`)."
-}
-
-variable "delimiter" {
-  type        = string
-  default     = "-"
-  description = "Delimiter to be used between `organization`, `environment`, `name` and `attributes`."
-}
-
-variable "tags" {
-  type        = map(any)
-  default     = {}
-  description = "Additional tags (e.g. map(`BusinessUnit`,`XYZ`)."
 }
 
 variable "managedby" {
@@ -71,7 +53,7 @@ variable "enabled" {
 
 variable "location" {
   type        = string
-  default     = ""
+  default     = null
   description = "Location where resource should be created."
 }
 
@@ -108,4 +90,10 @@ variable "resource_lock_enabled" {
 variable "lock_level" {
   type    = string
   default = "CanNotDelete"
+}
+
+variable "notes" {
+  type        = string
+  default     = "This Resource Group is locked by terrafrom"
+  description = "Specifies some notes about the lock. Maximum of 512 characters. Changing this forces a new resource to be created."
 }
