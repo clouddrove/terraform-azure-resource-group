@@ -1,8 +1,6 @@
-## Managed By : CloudDrove
-## Copyright @ CloudDrove. All Right Reserved.
-
-#Module      : labels
-#Description : Terraform module to create consistent naming for multiple names.
+##-----------------------------------------------------------------------------
+## Labels module callled that will be used for naming and tags.
+##-----------------------------------------------------------------------------
 module "labels" {
   source  = "clouddrove/labels/azure"
   version = "1.0.0"
@@ -15,8 +13,10 @@ module "labels" {
   repository    = var.repository
 }
 
-#Module      : RESOURCE GROUP
-#Description : Terraform resource for resource group.
+##-----------------------------------------------------------------------------
+## Terraform resource for resource group.
+## Azure automatically deletes any Resources nested within the Resource Group when a Resource Group is deleted.
+##-----------------------------------------------------------------------------
 resource "azurerm_resource_group" "default" {
   count    = var.enabled ? 1 : 0
   name     = format("%s-resource-group", module.labels.id)
@@ -31,6 +31,9 @@ resource "azurerm_resource_group" "default" {
   }
 }
 
+##-----------------------------------------------------------------------------
+## Manages a Management Lock which is scoped to a Subscription, Resource Group or Resource.
+##-----------------------------------------------------------------------------
 resource "azurerm_management_lock" "resource-group-level" {
   count      = var.enabled && var.resource_lock_enabled ? 1 : 0
   name       = format("%s-rg-lock", var.lock_level)
