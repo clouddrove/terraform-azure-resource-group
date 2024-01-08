@@ -48,9 +48,6 @@ variable "enabled" {
   description = "Flag to control the module creation."
 }
 
-
-## Resource Group
-
 variable "location" {
   type        = string
   default     = null
