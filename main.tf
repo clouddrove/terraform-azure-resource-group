@@ -11,6 +11,7 @@ module "labels" {
   business_unit = var.business_unit
   label_order   = var.label_order
   repository    = var.repository
+  extra_tags = var.extra_tags
 }
 
 ##-----------------------------------------------------------------------------

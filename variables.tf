@@ -94,3 +94,9 @@ variable "notes" {
   default     = "This Resource Group is locked by terrafrom"
   description = "Specifies some notes about the lock. Maximum of 512 characters. Changing this forces a new resource to be created."
 }
+variable "extra_tags" {
+type = map(string)
+default = null
+description = "Variable to pass extra tags."
+}
+
