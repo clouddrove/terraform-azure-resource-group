@@ -95,6 +95,7 @@ Here is an example of how you can use this module in your inventory structure:
 | delete | Used when deleting the Resource Group. | `string` | `"90m"` | no |
 | enabled | Flag to control the module creation. | `bool` | `true` | no |
 | environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `null` | no |
+| extra\_tags | Variable to pass extra tags. | `map(string)` | `null` | no |
 | label\_order | Label order, e.g. `name`,`application`. | `list(string)` | <pre>[<br>  "name",<br>  "environment"<br>]</pre> | no |
 | location | Location where resource should be created. | `string` | `null` | no |
 | lock\_level | n/a | `string` | `"CanNotDelete"` | no |
