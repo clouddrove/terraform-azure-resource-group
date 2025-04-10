@@ -1,0 +1,105 @@
+name: Release on PR Merge
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master  
+    if: github.event.pull_request.merged == true  
+
+permissions:
+  contents: write  
+  discussions: write  
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v3
+
+    - name: Set up Git
+      run: |
+        git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+        git config --global user.name "${{ secrets.GIT_USER_NAME }}"
+
+    - name: Install git-chglog
+      run: |
+        wget https://github.com/git-chglog/git-chglog/releases/download/v0.15.1/git-chglog_0.15.1_linux_amd64.tar.gz
+        tar xzf git-chglog_0.15.1_linux_amd64.tar.gz
+        sudo mv git-chglog /usr/local/bin/  # Move git-chglog to a directory in your PATH
+
+    - name: Get current version and bump based on labels
+      id: version
+      run: |
+        VERSION_FILE="VERSION"
+        if [ ! -f "$VERSION_FILE" ]; then
+          echo "v0.0.1" > $VERSION_FILE  # Initialize the VERSION file if it doesn't exist
+        fi
+
+        CURRENT_VERSION=$(cat $VERSION_FILE)
+        echo "Current version is $CURRENT_VERSION"
+        
+        # Logic to bump version based on PR labels
+        LABELS=$(jq -r '.pull_request.labels | map(.name) | join(",")' "$GITHUB_EVENT_PATH")
+        echo "Detected labels: $LABELS"
+
+        if [[ "$LABELS" == *"major"* ]]; then
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1+1 ".0.0"}')
+        elif [[ "$LABELS" == *"minor"* ]]; then
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." $2+1 ".0"}')
+        elif [[ "$LABELS" == *"patch"* ]]; then
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." $2 "." $3+1}')
+        else
+          echo "No labels found. Defaulting to patch version bump."
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." $2 "." $3+1}')
+        fi
+
+        echo "New version: $NEW_VERSION"
+        echo $NEW_VERSION > $VERSION_FILE  # Update the VERSION file with the new version
+        git add $VERSION_FILE
+        git commit -m "Bump version to $NEW_VERSION"
+        
+        # Output the new version to be used in the next steps
+        echo "::set-output name=NEW_VERSION::$NEW_VERSION"
+
+    - name: Pull latest changes from master
+      run: |
+        git fetch origin master  # Ensure you are working with the latest master branch
+        git merge origin/master  # Merge changes from master
+
+    - name: Push version bump commit
+      run: |
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:master 
+
+    - name: Create GitHub tag for the new version
+      id: create_tag
+      run: |
+        VERSION=$(cat VERSION)
+        echo "Creating tag: $VERSION"
+        git tag $VERSION  # Create the new tag
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} $VERSION 
+
+    - name: Get Last Release
+      id: last_release
+      run: |
+        LAST_RELEASE=$(git describe --tags --abbrev=0)
+        echo "Last release: $LAST_RELEASE"
+
+    - name: Generate Changelog
+      run: |
+        LAST_RELEASE=$(git describe --tags --abbrev=0)
+        git chglog $LAST_RELEASE > CHANGELOG.md
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        body_path: ./CHANGELOG.md 
+        draft: false
+        tag_name: ${{ steps.version.outputs.NEW_VERSION }} 
+
+    - name: Cleanup and Finish
+      run: echo "Release $VERSION created successfully."
