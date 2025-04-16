@@ -10,7 +10,7 @@ on:
 jobs:
   call-release-workflow:
     if: github.event.pull_request.merged == true
-    uses: /.github/workflows/workflow.yaml@master
+    uses: clouddrove-sandbox/resource-group-workflow/.github/workflows/workflow.yaml@master
     with:
       target_branch: 'master'
       version_file: 'VERSION'   # Optional, defaults to 'VERSION' if omitted
