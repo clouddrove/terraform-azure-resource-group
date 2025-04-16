@@ -1,18 +1,18 @@
-name: Release
+name: Call Release on PR Merge
 
 on:
-  workflow_call:
-    inputs:
-      branch:
-        required: true
-        type: string
-      version_file:
-        required: true
-        type: string
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master  # or your default branch
 
 jobs:
-  release:
-    uses: clouddrove-sandbox/reusable-workflow/.github/workflows/release.yml@master # Reference to your reusable workflow
+  call-release-workflow:
+    if: github.event.pull_request.merged == true
+    uses: clouddrove-sandbox/reusable-workflow/.github/workflows/release.yml@master
     with:
-      branch: master # Specify the branch to merge into
-      version_file: VERSION # Specify the version file (like `VERSION` file)
+      target_branch: 'master'
+      version_file: 'VERSION'   # Optional, defaults to 'VERSION' if omitted
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
