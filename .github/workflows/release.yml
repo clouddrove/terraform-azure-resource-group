@@ -12,7 +12,7 @@ on:
 
 jobs:
   release:
-    uses: clouddrove/github-shared-workflows/.github/workflows/release.yml@master # Reference to your reusable workflow
+    uses: clouddrove-sandbox/reusable-workflow/.github/workflows/release.yml@master # Reference to your reusable workflow
     with:
       branch: master # Specify the branch to merge into
       version_file: VERSION # Specify the version file (like `VERSION` file)
