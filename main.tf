@@ -32,9 +32,9 @@ resource "azurerm_resource_group" "default" {
   }
 }
 
-##-----------------------------------------------------------------------------
+##--------------------------------------------------------------------------------
 ## Manages a Management Lock which is scoped to a Subscription, Resource Group or Resource.
-##-----------------------------------------------------------------------------
+##--------------------------------------------------------------------------------
 resource "azurerm_management_lock" "resource-group-level" {
   count      = var.enabled && var.resource_lock_enabled ? 1 : 0
   name       = format("%s-rg-lock", var.lock_level)
@@ -42,3 +42,6 @@ resource "azurerm_management_lock" "resource-group-level" {
   lock_level = var.lock_level
   notes      = var.notes
 }
+
+
+
