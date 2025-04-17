@@ -6,10 +6,6 @@ on:
       target_branch:
         required: true
         type: string
-      version_file:
-        required: false
-        type: string
-        default: 'VERSION'
     secrets:
       GH_TOKEN:
         required: true
@@ -20,6 +16,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Only run if PR is merged into target branch
     if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.target_branch }}
 
     steps:
@@ -31,23 +28,12 @@ jobs:
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-    - name: Install git-chglog
+    - name: Install jq and git-chglog
       run: |
+        sudo apt-get update && sudo apt-get install -y jq
         wget https://github.com/git-chglog/git-chglog/releases/download/v0.15.1/git-chglog_0.15.1_linux_amd64.tar.gz
         tar xzf git-chglog_0.15.1_linux_amd64.tar.gz
         sudo mv git-chglog /usr/local/bin/
-
-    - name: Ensure at least one tag exists
-      id: ensure_tag
-      run: |
-        TAG_COUNT=$(git tag | wc -l)
-        if [ "$TAG_COUNT" -eq 0 ]; then
-          echo "v0.0.0" > ${{ inputs.version_file }}
-          git add ${{ inputs.version_file }}
-          git commit -m "chore: add initial version file"
-          git tag v0.0.0
-          git push origin v0.0.0
-        fi
 
     - name: Get PR labels
       id: pr_labels
@@ -64,41 +50,35 @@ jobs:
           echo "skip=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Get latest tag
+    - name: Get latest tag (or v0.0.0 if none)
       id: get_latest_tag
       run: |
-        LATEST_TAG=$(git describe --tags --abbrev=0)
+        git fetch --tags
+        LATEST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+        if [ -z "$LATEST_TAG" ]; then
+          LATEST_TAG="v0.0.0"
+        fi
         echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-    - name: Calculate next version
+    - name: Calculate next version from latest tag and PR label
       id: calc_version
       if: steps.skip_tag.outputs.skip == 'false'
       run: |
-        LATEST=${{ steps.get_latest_tag.outputs.latest_tag }}
-        # Remove the leading 'v'
-        BASE_VERSION=${LATEST#v}
+        BASE_VERSION="${{ steps.get_latest_tag.outputs.latest_tag }}"
+        BASE_VERSION="${BASE_VERSION#v}" # Remove leading v
         IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
         LABELS="${{ steps.pr_labels.outputs.labels }}"
         if [[ "$LABELS" == *"major"* ]]; then
-          ((MAJOR+=1)); MINOR=0; PATCH=0
+          MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0
         elif [[ "$LABELS" == *"minor"* ]]; then
-          ((MINOR+=1)); PATCH=0
+          MINOR=$((MINOR+1)); PATCH=0
         elif [[ "$LABELS" == *"patch"* ]]; then
-          ((PATCH+=1))
+          PATCH=$((PATCH+1))
         else
-          # Default to patch bump if no label found
-          ((PATCH+=1))
+          PATCH=$((PATCH+1))
         fi
         NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
         echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "$NEW_VERSION" > ${{ inputs.version_file }}
-
-    - name: Commit and push version bump
-      if: steps.skip_tag.outputs.skip == 'false'
-      run: |
-        git add ${{ inputs.version_file }}
-        git commit -m "chore: bump version to ${{ steps.calc_version.outputs.new_version }}"
-        git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ inputs.target_branch }}
 
     - name: Create GitHub tag for the new version
       if: steps.skip_tag.outputs.skip == 'false'
