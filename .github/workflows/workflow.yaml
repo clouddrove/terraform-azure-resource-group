@@ -16,15 +16,15 @@ on:
 
 permissions:
   contents: write
-  discussions: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.target_branch }}
 
     steps:
     - name: Checkout the repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Git
       run: |
@@ -37,69 +37,92 @@ jobs:
         tar xzf git-chglog_0.15.1_linux_amd64.tar.gz
         sudo mv git-chglog /usr/local/bin/
 
-    - name: Get current version and bump based on labels
-      id: version
+    - name: Ensure at least one tag exists
+      id: ensure_tag
       run: |
-        VERSION_FILE="${{ inputs.version_file }}"
-        if [ ! -f "$VERSION_FILE" ]; then
-          echo "v0.0.1" > $VERSION_FILE
+        TAG_COUNT=$(git tag | wc -l)
+        if [ "$TAG_COUNT" -eq 0 ]; then
+          echo "v0.0.0" > ${{ inputs.version_file }}
+          git add ${{ inputs.version_file }}
+          git commit -m "chore: add initial version file"
+          git tag v0.0.0
+          git push origin v0.0.0
         fi
-        CURRENT_VERSION=$(cat $VERSION_FILE)
-        echo "Current version is $CURRENT_VERSION"
-        # Logic to bump version based on PR labels
+
+    - name: Get PR labels
+      id: pr_labels
+      run: |
         LABELS=$(jq -r '.pull_request.labels | map(.name) | join(",")' "$GITHUB_EVENT_PATH")
-        echo "Detected labels: $LABELS"
-        if [[ "$LABELS" == *"major"* ]]; then
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1+1 ".0.0"}')
-        elif [[ "$LABELS" == *"minor"* ]]; then
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." $2+1 ".0"}')
-        elif [[ "$LABELS" == *"patch"* ]]; then
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." $2 "." $3+1}')
+        echo "labels=$LABELS" >> $GITHUB_OUTPUT
+
+    - name: Check for no-tag label
+      id: skip_tag
+      run: |
+        if [[ "${{ steps.pr_labels.outputs.labels }}" == *"no-tag"* ]]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
         else
-          echo "No labels found. Defaulting to patch version bump."
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1 "." $2 "." $3+1}')
+          echo "skip=false" >> $GITHUB_OUTPUT
         fi
-        echo "New version: $NEW_VERSION"
-        echo $NEW_VERSION > $VERSION_FILE
-        git add $VERSION_FILE
-        git commit -m "Bump version to $NEW_VERSION"
-        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-    - name: Pull latest changes from target branch
+    - name: Get latest tag
+      id: get_latest_tag
       run: |
-        git fetch origin ${{ inputs.target_branch }}
-        git merge origin/${{ inputs.target_branch }}
+        LATEST_TAG=$(git describe --tags --abbrev=0)
+        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-    - name: Push version bump commit
+    - name: Calculate next version
+      id: calc_version
+      if: steps.skip_tag.outputs.skip == 'false'
       run: |
+        LATEST=${{ steps.get_latest_tag.outputs.latest_tag }}
+        # Remove the leading 'v'
+        BASE_VERSION=${LATEST#v}
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+        LABELS="${{ steps.pr_labels.outputs.labels }}"
+        if [[ "$LABELS" == *"major"* ]]; then
+          ((MAJOR+=1)); MINOR=0; PATCH=0
+        elif [[ "$LABELS" == *"minor"* ]]; then
+          ((MINOR+=1)); PATCH=0
+        elif [[ "$LABELS" == *"patch"* ]]; then
+          ((PATCH+=1))
+        else
+          # Default to patch bump if no label found
+          ((PATCH+=1))
+        fi
+        NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "$NEW_VERSION" > ${{ inputs.version_file }}
+
+    - name: Commit and push version bump
+      if: steps.skip_tag.outputs.skip == 'false'
+      run: |
+        git add ${{ inputs.version_file }}
+        git commit -m "chore: bump version to ${{ steps.calc_version.outputs.new_version }}"
         git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ inputs.target_branch }}
 
     - name: Create GitHub tag for the new version
-      id: create_tag
+      if: steps.skip_tag.outputs.skip == 'false'
       run: |
-        VERSION=$(cat ${{ inputs.version_file }})
-        echo "Creating tag: $VERSION"
-        git tag $VERSION
-        git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} $VERSION
-
-    - name: Get Last Release
-      id: last_release
-      run: |
-        LAST_RELEASE=$(git describe --tags --abbrev=0)
-        echo "Last release: $LAST_RELEASE"
+        git tag ${{ steps.calc_version.outputs.new_version }}
+        git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.calc_version.outputs.new_version }}
 
     - name: Generate Changelog
+      if: steps.skip_tag.outputs.skip == 'false'
       run: |
-        LAST_RELEASE=$(git describe --tags --abbrev=0)
-        git chglog $LAST_RELEASE > CHANGELOG.md
+        git chglog ${{ steps.get_latest_tag.outputs.latest_tag }}..${{ steps.calc_version.outputs.new_version }} > CHANGELOG.md
 
     - name: Create GitHub Release
-      id: create_release
+      if: steps.skip_tag.outputs.skip == 'false'
       uses: softprops/action-gh-release@v2
       with:
         body_path: ./CHANGELOG.md
         draft: false
-        tag_name: ${{ env.NEW_VERSION }}
+        tag_name: ${{ steps.calc_version.outputs.new_version }}
 
-    - name: Cleanup and Finish
-      run: echo "Release ${{ env.NEW_VERSION }} created successfully."
+    - name: Action Summary
+      run: |
+        if [[ "${{ steps.skip_tag.outputs.skip }}" == "true" ]]; then
+          echo "🚫 Release skipped due to 'no-tag' label."
+        else
+          echo "✅ Released ${{ steps.calc_version.outputs.new_version }} successfully."
+        fi
