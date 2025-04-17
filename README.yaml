@@ -26,7 +26,7 @@ badges:
     image: "https://img.shields.io/badge/License-APACHE-blue.svg"
     url: "LICENSE.md"
 
-#  description of this project
+#  description of this project.
 description: |-
   Terraform module to create RESOURCE-GROUP resource on AZURE.
 
