@@ -8,6 +8,6 @@ jobs:
   release:
     uses: clouddrove-sandbox/resource-group-workflow/.github/workflows/workflow.yaml@master
     with:
-      target_branch: main
+      target_branch: master
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
