@@ -11,3 +11,4 @@ jobs:
       target_branch: master
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
