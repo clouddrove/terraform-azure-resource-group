@@ -1,18 +1,13 @@
-name: Call Release on PR Merge
+name: Tag Release
 
 on:
   pull_request:
-    types:
-      - closed
-    branches:
-      - master  # or your default branch
+    types: [closed]
 
 jobs:
-  call-release-workflow:
-    if: github.event.pull_request.merged == true
+  release:
     uses: clouddrove-sandbox/resource-group-workflow/.github/workflows/workflow.yaml@master
     with:
-      target_branch: 'master'
-      version_file: 'VERSION'   # Optional, defaults to 'VERSION' if omitted
+      target_branch: main
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
