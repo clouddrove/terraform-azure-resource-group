@@ -14,7 +14,7 @@ license: "APACHE"
 # Canonical GitHub repo
 github_repo: clouddrove/terraform-azure-resource-group
 
-# Badges to display
+# Badges to display.
 badges:
   - name: "Latest Release"
     image: "https://img.shields.io/github/release/clouddrove/terraform-azure-resource-group.svg"
