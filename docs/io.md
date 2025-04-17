@@ -1,5 +1,7 @@
 ## Inputs
 
+
+
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | business\_unit | Top-level division of your company that owns the subscription or workload that the resource belongs to. In smaller organizations, this tag might represent a single corporate or shared top-level organizational element. | `string` | `"Corp"` | no |
