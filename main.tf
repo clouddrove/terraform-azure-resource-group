@@ -1,5 +1,5 @@
 ##-----------------------------------------------------------------------------
-## Labels module callled that will be used for naming and tags.
+## Labels module callled that will be used for naming and tags.   ss s
 ##-----------------------------------------------------------------------------
 module "labels" {
   source  = "clouddrove/labels/azure"
