@@ -83,29 +83,7 @@ jobs:
           git tag ${{ steps.calc_version.outputs.new_version }}
           git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.calc_version.outputs.new_version }}
 
-      - name: Generate Fancy Changelog (base/head tag)
-        if: steps.skip_tag.outputs.skip == 'false'
-        id: changelog
-        uses: jaywcjlove/changelog-generator@main
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          base-ref: ${{ steps.get_latest_tag.outputs.latest_tag }}
-          head-ref: ${{ steps.calc_version.outputs.new_version }}
-          custom-emoji: 'feat✨,fix🐛,build👷'
-          template: |
-            ## ✨ New Features
-
-            {{feat}}
-
-            ## 🐛 Bug Fixes
-
-            {{fix}}
-
-            ## 👷 Build System
-
-            {{build}}
-
-      - name: Create Release with Fancy Changelog
+      - name: Create Release with Compare Link Only
         if: steps.skip_tag.outputs.skip == 'false'
         uses: ncipollo/release-action@v1
         with:
@@ -113,18 +91,7 @@ jobs:
           tag: ${{ steps.calc_version.outputs.new_version }}
           name: ${{ steps.calc_version.outputs.new_version }}
           body: |
-            ${{ steps.changelog.outputs.compareurl }}
-
-            ${{ steps.changelog.outputs.changelog }}
-
-      - name: Commit and Push Changelog
-        if: steps.skip_tag.outputs.skip == 'false'
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: 'CHANGELOG.md'
-          message: 'docs: update CHANGELOG.md for ${{ steps.calc_version.outputs.new_version }}'
-          committer_name: GitHub Actions
-          committer_email: actions@github.com
+            https://github.com/${{ github.repository }}/compare/${{ steps.get_latest_tag.outputs.latest_tag }}...${{ steps.calc_version.outputs.new_version }}
 
       - name: Action Summary
         run: |
