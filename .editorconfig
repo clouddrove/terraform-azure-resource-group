@@ -1,6 +1,8 @@
 # EditorConfig is awesome: http://EditorConfig.org
 # Uses editorconfig to maintain consistent coding styles
 
+
+
 # top-most EditorConfig file
 root = true
 
