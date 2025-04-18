@@ -9,6 +9,8 @@ on:
     secrets:
       GH_TOKEN:
         required: true
+      GITHUB:
+        required: true  # Yeh secret shared changelog workflow ke liye chahiye
 
 permissions:
   contents: write
@@ -20,89 +22,78 @@ jobs:
     if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.target_branch }}
 
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v4
+      - name: Checkout the repository
+        uses: actions/checkout@v4
 
-    - name: Set up Git
-      run: |
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
+      - name: Set up Git
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
-    - name: Install jq and git-chglog
-      run: |
-        sudo apt-get update && sudo apt-get install -y jq
-        wget https://github.com/git-chglog/git-chglog/releases/download/v0.15.1/git-chglog_0.15.1_linux_amd64.tar.gz
-        tar xzf git-chglog_0.15.1_linux_amd64.tar.gz
-        sudo mv git-chglog /usr/local/bin/
+      - name: Get PR labels
+        id: pr_labels
+        run: |
+          LABELS=$(jq -r '.pull_request.labels | map(.name) | join(",")' "$GITHUB_EVENT_PATH")
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
 
-    - name: Get PR labels
-      id: pr_labels
-      run: |
-        LABELS=$(jq -r '.pull_request.labels | map(.name) | join(",")' "$GITHUB_EVENT_PATH")
-        echo "labels=$LABELS" >> $GITHUB_OUTPUT
+      - name: Check for no-tag label
+        id: skip_tag
+        run: |
+          if [[ "${{ steps.pr_labels.outputs.labels }}" == *"no-tag"* ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
-    - name: Check for no-tag label
-      id: skip_tag
-      run: |
-        if [[ "${{ steps.pr_labels.outputs.labels }}" == *"no-tag"* ]]; then
-          echo "skip=true" >> $GITHUB_OUTPUT
-        else
-          echo "skip=false" >> $GITHUB_OUTPUT
-        fi
+      - name: Get latest tag (or v0.0.0 if none)
+        id: get_latest_tag
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-    - name: Get latest tag (or v0.0.0 if none)
-      id: get_latest_tag
-      run: |
-        git fetch --tags
-        LATEST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
-        if [ -z "$LATEST_TAG" ]; then
-          LATEST_TAG="v0.0.0"
-        fi
-        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+      - name: Calculate next version from latest tag and PR label
+        id: calc_version
+        if: steps.skip_tag.outputs.skip == 'false'
+        run: |
+          BASE_VERSION="${{ steps.get_latest_tag.outputs.latest_tag }}"
+          BASE_VERSION="${BASE_VERSION#v}" # Remove leading v
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+          LABELS="${{ steps.pr_labels.outputs.labels }}"
+          if [[ "$LABELS" == *"major"* ]]; then
+            MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0
+          elif [[ "$LABELS" == *"minor"* ]]; then
+            MINOR=$((MINOR+1)); PATCH=0
+          elif [[ "$LABELS" == *"patch"* ]]; then
+            PATCH=$((PATCH+1))
+          else
+            PATCH=$((PATCH+1))
+          fi
+          NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-    - name: Calculate next version from latest tag and PR label
-      id: calc_version
-      if: steps.skip_tag.outputs.skip == 'false'
-      run: |
-        BASE_VERSION="${{ steps.get_latest_tag.outputs.latest_tag }}"
-        BASE_VERSION="${BASE_VERSION#v}" # Remove leading v
-        IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
-        LABELS="${{ steps.pr_labels.outputs.labels }}"
-        if [[ "$LABELS" == *"major"* ]]; then
-          MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0
-        elif [[ "$LABELS" == *"minor"* ]]; then
-          MINOR=$((MINOR+1)); PATCH=0
-        elif [[ "$LABELS" == *"patch"* ]]; then
-          PATCH=$((PATCH+1))
-        else
-          PATCH=$((PATCH+1))
-        fi
-        NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
-        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+      - name: Create GitHub tag for the new version
+        if: steps.skip_tag.outputs.skip == 'false'
+        run: |
+          git tag ${{ steps.calc_version.outputs.new_version }}
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.calc_version.outputs.new_version }}
 
-    - name: Create GitHub tag for the new version
-      if: steps.skip_tag.outputs.skip == 'false'
-      run: |
-        git tag ${{ steps.calc_version.outputs.new_version }}
-        git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} ${{ steps.calc_version.outputs.new_version }}
+      - name: Action Summary
+        run: |
+          if [[ "${{ steps.skip_tag.outputs.skip }}" == "true" ]]; then
+            echo "🚫 Release skipped due to 'no-tag' label."
+          else
+            echo "✅ Released ${{ steps.calc_version.outputs.new_version }} successfully."
+          fi
 
-    - name: Generate Changelog
-      if: steps.skip_tag.outputs.skip == 'false'
-      run: |
-        git chglog ${{ steps.get_latest_tag.outputs.latest_tag }}..${{ steps.calc_version.outputs.new_version }} > CHANGELOG.md
-
-    - name: Create GitHub Release
-      if: steps.skip_tag.outputs.skip == 'false'
-      uses: softprops/action-gh-release@v2
-      with:
-        body_path: ./CHANGELOG.md
-        draft: false
-        tag_name: ${{ steps.calc_version.outputs.new_version }}
-
-    - name: Action Summary
-      run: |
-        if [[ "${{ steps.skip_tag.outputs.skip }}" == "true" ]]; then
-          echo "🚫 Release skipped due to 'no-tag' label."
-        else
-          echo "✅ Released ${{ steps.calc_version.outputs.new_version }} successfully."
-        fi
+  changelog:
+    needs: release
+    if: ${{ needs.release.outputs.skip_tag != 'true' }}
+    uses: clouddrove/github-shared-workflows/.github/workflows/changelog.yml@1.2.1
+    with:
+      branch: ${{ inputs.target_branch }}
+    secrets:
+      GITHUB: ${{ secrets.GITHUB }}
