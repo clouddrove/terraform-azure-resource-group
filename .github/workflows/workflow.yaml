@@ -9,8 +9,6 @@ on:
     secrets:
       GH_TOKEN:
         required: true
-      GITHUB:
-        required: true  # Yeh secret shared changelog workflow ke liye chahiye
 
 permissions:
   contents: write
@@ -18,8 +16,11 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Only run if PR is merged into target branch
     if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.target_branch }}
+
+    outputs:
+      skip_tag: ${{ steps.skip_tag.outputs.skip }}
+      new_version: ${{ steps.calc_version.outputs.new_version }}
 
     steps:
       - name: Checkout the repository
@@ -29,6 +30,9 @@ jobs:
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Get PR labels
         id: pr_labels
@@ -92,8 +96,36 @@ jobs:
   changelog:
     needs: release
     if: ${{ needs.release.outputs.skip_tag != 'true' }}
-    uses: clouddrove/github-shared-workflows/.github/workflows/changelog.yml@1.2.1
-    with:
-      branch: ${{ inputs.target_branch }}
-    secrets:
-      GITHUB: ${{ secrets.GITHUB }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Generate Fancy Changelog
+        uses: jaywcjlove/changelog-generator@main
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          template: |
+            ## ✨ New Features
+
+            {{feat}}
+
+            ## 🐛 Bug Fixes
+
+            {{fix}}
+
+            ## 👷 Build System
+
+            {{build}}
+          custom-emoji: 'feat✨,fix🐛,build👷'
+
+      - name: Commit and Push Changelog
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'CHANGELOG.md'
+          message: 'docs: update CHANGELOG.md for ${{ needs.release.outputs.new_version }}'
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
